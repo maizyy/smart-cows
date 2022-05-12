@@ -18,8 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "usart.h"
 #include "gpio.h"
+#include "Battery_3_7.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -173,8 +175,10 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
+  BATTERY_Init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
 
   /* USER CODE END 2 */
@@ -185,11 +189,14 @@ int main(void)
   {
 	  connect_to_lora();
 
-	  int battery = 75;
-	  float temp = 21.5;
+	  double voltage = BATTERY_GetBatteryVolts();
+	  int batteryLevel = BATTERY_GetBatteryChargeLevel();
+
+	  float temp = voltage;
 	  double longitude = 13.56438;
 	  double latitude = 8.98432;
-	  printf("AT+MSG=%d_%f_%f_%f\r\n", battery, temp, longitude, latitude);
+	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temp, longitude, latitude);
+
 	  HAL_Delay(10000);
 
     /* USER CODE END WHILE */
@@ -218,9 +225,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
