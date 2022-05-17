@@ -1,5 +1,4 @@
-#include "Battery_3_7.h"
-
+#include <battery_3_7.h>
 #include "adc.h"
 #include <stdlib.h>
 
@@ -7,17 +6,15 @@
  * Private variables
  */
 
-double _vs[101];
-uint32_t _timeout;
-ADC_HandleTypeDef* _hadc;
-
-
+static double _vs[101];
+static uint32_t _timeout;
+static ADC_HandleTypeDef* _hadc;
 
 /*
  * Private functions
  */
 
-static void _initVoltsArray(){
+static void _initVoltsArray(void){
     _vs[0] = 3.200; 
     _vs[1] = 3.250; _vs[2] = 3.300; _vs[3] = 3.350; _vs[4] = 3.400; _vs[5] = 3.450;
     _vs[6] = 3.500; _vs[7] = 3.550; _vs[8] = 3.600; _vs[9] = 3.650; _vs[10] = 3.700;
@@ -41,20 +38,18 @@ static void _initVoltsArray(){
     _vs[96] = 4.156; _vs[97] = 4.167; _vs[98] = 4.178; _vs[99] = 4.189; _vs[100] = 4.200;
 }
 
-static uint32_t _analogRead(){
+static uint32_t _analogRead(void) {
     HAL_ADC_Start(_hadc);
 	HAL_ADC_PollForConversion(_hadc, _timeout);
     return HAL_ADC_GetValue(_hadc);
 }
 
-//TODO: Do zmiany 3.3f/2.1f
-static double _analogReadToVolts(uint32_t readValue){
-  double volts;
-  volts = readValue * 3.3f / 4096.0f;
+static float _analogReadToVolts(uint32_t readValue) {
+  float volts = 2.0f * readValue * 3.3f / 4096.0f;
   return volts;
 }
 
-static int _getChargeLevel(double volts){
+static int _getChargeLevel(float volts) {
   int idx = 50;
   int prev = 0;
   int half = 0;
@@ -85,24 +80,22 @@ static int _getChargeLevel(double volts){
  * Public functions
  */
 
-void BATTERY_Init(ADC_HandleTypeDef* hadc, uint32_t timeout)
-{
+void battery_init(ADC_HandleTypeDef* hadc, uint32_t timeout) {
 	_hadc = hadc;
 	_timeout = timeout;
+	_initVoltsArray();
     HAL_ADCEx_Calibration_Start(hadc, ADC_SINGLE_ENDED);
 }
 
 
-int BATTERY_GetBatteryChargeLevel()
-{
-	_initVoltsArray();
+int battery_getBatteryChargeLevel(void) {
     uint32_t readValue = _analogRead();
     double volts = _analogReadToVolts(readValue);
     int chargeLevel = _getChargeLevel(volts);
     return chargeLevel;
 }
 
-double BATTERY_GetBatteryVolts(){
+float battery_getBatteryVolts(void) {
     uint32_t readValue = _analogRead();
     return _analogReadToVolts(readValue);
 }

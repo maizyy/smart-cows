@@ -19,15 +19,16 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
-#include "Battery_3_7.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include <string.h>
 #include <stdio.h>
+#include <battery_3_7.h>
 
 /* USER CODE END Includes */
 
@@ -108,10 +109,10 @@ int __io_putchar(int ch)
 {
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
-		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
 	}
 
-	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
 	return 1;
 }
 
@@ -128,6 +129,9 @@ void connect_to_lora()
 		HAL_Delay(500);
 
 		printf("AT+CH=NUM,0-2\r\n");
+		HAL_Delay(500);
+
+		printf("AT+LW=VER\r\n");
 		HAL_Delay(500);
 
 		printf("AT+MODE=LWOTAA\r\n");
@@ -176,9 +180,10 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   MX_ADC1_Init();
+  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
-  BATTERY_Init(&hadc1, HAL_MAX_DELAY);
+  battery_init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
 
   /* USER CODE END 2 */
@@ -189,15 +194,20 @@ int main(void)
   {
 	  connect_to_lora();
 
-	  double voltage = BATTERY_GetBatteryVolts();
-	  int batteryLevel = BATTERY_GetBatteryChargeLevel();
+	  float voltage = battery_getBatteryVolts();
+	  int batteryLevel = battery_getBatteryChargeLevel();
 
-	  float temp = voltage;
-	  double longitude = 13.56438;
-	  double latitude = 8.98432;
-	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temp, longitude, latitude);
+	  float temperature = voltage;
+	  float longitude = 13.56438;
+	  float latitude = 8.98432;
+	  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
+	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
 
-	  HAL_Delay(10000);
+	  const char msg[] = "Going to sleep now...\r\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+
+	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	  HAL_PWR_EnterSTANDBYMode();
 
     /* USER CODE END WHILE */
 
@@ -222,12 +232,16 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
@@ -241,8 +255,8 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV4;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
@@ -250,6 +264,10 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+  /** Enable MSI Auto calibration
+  */
+  HAL_RCCEx_EnableMSIPLLMode();
 }
 
 /* USER CODE BEGIN 4 */
