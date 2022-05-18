@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <battery_3_7.h>
+#include <GPS.h>
 
 /* USER CODE END Includes */
 
@@ -192,16 +193,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  connect_to_lora();
+	  //connect_to_lora();
 
 	  float voltage = battery_getBatteryVolts();
 	  int batteryLevel = battery_getBatteryChargeLevel();
 
 	  float temperature = voltage;
-	  float longitude = 13.56438;
-	  float latitude = 8.98432;
+	  Position *currentPosition = GPS_getCurrentPosition();
 	  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
-	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
+	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition->longitude, currentPosition->latitude);
 
 	  const char msg[] = "Going to sleep now...\r\n";
 	  HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);

@@ -9,6 +9,8 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include my_libraries/GPS/src/subdir.mk
+-include my_libraries/Battery_3_7/src/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -60,8 +62,8 @@ all: main-build
 main-build: smart-cows-stm32.elf secondary-outputs
 
 # Tool invocations
-smart-cows-stm32.elf smart-cows-stm32.map: $(OBJS) $(USER_OBJS) C:\Users\Adrian\Documents\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "smart-cows-stm32.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Adrian\Documents\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="smart-cows-stm32.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+smart-cows-stm32.elf smart-cows-stm32.map: $(OBJS) $(USER_OBJS) F:\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "smart-cows-stm32.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"F:\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="smart-cows-stm32.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
