@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <battery_3_7.h>
 #include <GPS.h>
 
@@ -45,17 +46,31 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define LINE_MAX_LENGTH	60
+#define JOIN_ALREADY "+JOIN: Joined already"
+#define NETWORK_JOINED "+JOIN: Network joined"
+#define JOIN_DONE "+JOIN: Done"
+#define MSG_DONE "+MSG: Done"
+
+//TODO: Na razie usypianie działa tylko przez max 30 sekund
+#define TIME_SLEEP 30 // [s]
+#define MAX_ATTEMPTS_CONNECTION 5
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
-int connectedToNetwork = 0;
-int i;
-uint8_t gpsMsg;
+bool connectedToNetwork = false;
+bool networkStatusReceived = false;
+bool configStatusReceived = false;
+bool messageDoneStatusReceived = false;
 uint8_t rxData;
-uint8_t joinData[11];
+char line_buffer[LINE_MAX_LENGTH + 1];
+uint32_t line_length;
+
+int connectionRequestCounter = 0;
 
 
 
@@ -69,25 +84,32 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	HAL_UART_Transmit(&huart2, &rxData, 1, HAL_MAX_DELAY);
 
-	if(huart == &huart1)
-	{
-		if(rxData == '+'){
-			i = 0;
-			joinData[i] = rxData;
-		} else {
-			i++;
-			joinData[i] = rxData;
-		}
-
-		if(i == 10){
-			if(joinData[0] == '+' && joinData[1] == 'J' && joinData[2] == 'O' && joinData[3] == 'I' && joinData[4] == 'N'
-					&& joinData[7] == 'N' && joinData[8] == 'e' && joinData[9] == 't' && joinData[10] == 'w'){
-				connectedToNetwork = 1;
+	if (rxData == '\r' || rxData == '\n') {
+		if(line_length > 0) {
+			line_buffer[line_length] = '\0';
+			if(strcmp(line_buffer, JOIN_ALREADY) == 0) {
+				connectedToNetwork = true;
+				networkStatusReceived = true;
+			} else if(strcmp(line_buffer, NETWORK_JOINED) == 0) {
+				connectedToNetwork = true;
+			} else if (strcmp(line_buffer, JOIN_DONE) == 0) {
+				networkStatusReceived = true;
+			} else if (strcmp(line_buffer, MSG_DONE) == 0) {
+				messageDoneStatusReceived = true;
+			} else {
+				configStatusReceived = true;
 			}
-			i = 0;
+			line_length = 0;
 		}
 	}
-	else if (huart == &huart3)
+	else {
+		if(line_length >= LINE_MAX_LENGTH) {
+			line_length = 0;
+		}
+		line_buffer[line_length++] = rxData;
+	}
+
+	if (huart == &huart3)
 	{
 		GPS_UART_Callback(&rxData);
 	}
@@ -128,35 +150,53 @@ int __io_putchar(int ch)
 	return 1;
 }
 
-void connect_to_lora()
+void sendConfigMessageToLora(const char* msg)
 {
-	while(connectedToNetwork == 0){
-		printf("AT+ID=DevEui\r\n");
-		HAL_Delay(500);
+	configStatusReceived = false;
+	printf(msg);
+	while(!configStatusReceived){
+	}
+	configStatusReceived = false;
+}
 
-		printf("AT+ID=AppEui\r\n");
-		HAL_Delay(500);
+void sendJoinRequestToLora()
+{
+	printf("AT+JOIN\r\n");
+	while(!networkStatusReceived){
+	}
+	networkStatusReceived = false;
+}
 
-		printf("AT+DR=EU868\r\n");
-		HAL_Delay(500);
+void goToDeepSleep() {
+	  sendConfigMessageToLora("AT+LOWPOWER=AUTOON\r\n");
+	  HAL_Delay(10);
+	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&hrtc, RTC_FLAG_WUTF);
+	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (TIME_SLEEP * 2048) - 1, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	  HAL_PWR_EnterSTANDBYMode();
+}
 
-		printf("AT+CH=NUM,0-2\r\n");
-		HAL_Delay(500);
+void connectToLora()
+{
+	connectionRequestCounter++;
+	sendJoinRequestToLora();
 
-		printf("AT+LW=VER\r\n");
-		HAL_Delay(500);
+	while(connectedToNetwork == 0 && connectionRequestCounter < MAX_ATTEMPTS_CONNECTION){
+//		sendConfigMessageToLora("AT+ID=DevEui\r\n");
+//		sendConfigMessageToLora("AT+ID=AppEui\r\n");
+//		sendConfigMessageToLora("AT+LW=VER\r\n");
 
-		printf("AT+MODE=LWOTAA\r\n");
-		HAL_Delay(500);
+		sendConfigMessageToLora("AT+DR=EU868\r\n");
+		sendConfigMessageToLora("AT+CH=NUM,0-2\r\n");
+		sendConfigMessageToLora("AT+MODE=LWOTAA\r\n");
+		sendConfigMessageToLora("AT+KEY=APPKEY,\"D5A115FED9A381224497F0D3C9688F88\"\r\n");
+		sendJoinRequestToLora();
 
-		printf("AT+KEY=APPKEY,\"F4D4B405FF7AB3C3DF60C78F399B1E3C\"\r\n");
-		HAL_Delay(500);
+		connectionRequestCounter++;
+	}
 
-		printf("AT+ID\r\n");
-		HAL_Delay(500);
-
-		printf("AT+JOIN\r\n");
-		HAL_Delay(10000);
+	if(connectionRequestCounter == MAX_ATTEMPTS_CONNECTION) {
+		goToDeepSleep();
 	}
 }
 
@@ -199,6 +239,30 @@ int main(void)
   battery_init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
 
+  if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
+  {
+	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+
+	  char *str = "Wakeup from the STANDBY MODE\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+
+	  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+  }
+
+  /* Wyłączenie trybu LOW-POWER (lora) */
+  HAL_Delay(1500);
+  sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
+
+  connectToLora();
+
+
+//	  while(messageDoneStatusReceived == 0) {
+//	  }
+//	  messageDoneStatusReceived = 0;
+//	  HAL_Delay(10);
+
+  /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
+
 
   /* USER CODE END 2 */
 
@@ -206,13 +270,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  connect_to_lora();
 
 	  if(connectedToNetwork)
 		  GPS_Init(&rxData);
 
 	  if(gpsDataReady)
 	  {
+		  /* Pomiary i wysyłanie danych do TTN */
 		  float voltage = battery_getBatteryVolts();
 		  int batteryLevel = battery_getBatteryChargeLevel();
 		  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
@@ -223,12 +287,11 @@ int main(void)
 		  //printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
 		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
 
-		  HAL_Delay(10000);
+		  HAL_Delay(1500);
 
-
-//		  HAL_Delay(500);
-//		  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-//		  HAL_PWR_EnterSTANDBYMode();
+		  char *str2 = "STANDBY MODE is ON\n";
+		  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
+		  goToDeepSleep();
 	  }
     /* USER CODE END WHILE */
 

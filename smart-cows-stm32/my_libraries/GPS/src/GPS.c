@@ -17,7 +17,7 @@ uint8_t gpsDataReady = 0;
 
 static char messageBuffer[80] = {};
 static uint8_t mess_index = 0;
-Position *currentPosition;
+Position currentPosition = {0,0};
 
 /*
  * private functions
@@ -43,8 +43,8 @@ static void parseGPGLLSentence()
 	float lat, lon;
     char sn, we;
 	sscanf(messageBuffer, "$GPGLL,%f,%c,%f,%c", &lat, &sn, &lon, &we);
-	currentPosition -> latitude = (float) changeCordsToDec(lat, sn);
-	currentPosition -> longitude = (float) changeCordsToDec(lon, we);
+	currentPosition.latitude = (float) changeCordsToDec(lat, sn);
+	currentPosition.longitude = (float) changeCordsToDec(lon, we);
 }
 
 static float changeCordsToDec(float deg_coord, char nsew) {
@@ -67,7 +67,6 @@ static float changeCordsToDec(float deg_coord, char nsew) {
 void GPS_Init(uint8_t *rxData)
 {
 	gpsDataReady = 0;
-	currentPosition = malloc(sizeof(Position));
 	HAL_UART_Receive_IT(GPS_USART, (uint8_t *) &rxData, 1);
 }
 
@@ -113,7 +112,7 @@ void GPS_UART_Callback(uint8_t *rxData)
 
 void GPS_getCurrentPosition(Position *const position)
 {
-	memcpy(position, currentPosition, sizeof(Position));
+	memcpy(position, &currentPosition, sizeof(Position));
 	gpsDataReady = 0;
 }
 

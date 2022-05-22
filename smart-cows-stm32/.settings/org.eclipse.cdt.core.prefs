@@ -4,6 +4,7 @@ doxygen/doxygen_use_javadoc_tags=true
 doxygen/doxygen_use_pre_tag=false
 doxygen/doxygen_use_structural_commands=false
 eclipse.preferences.version=1
+<<<<<<< HEAD
 org.eclipse.cdt.core.formatter.alignment_for_arguments_in_method_invocation=16
 org.eclipse.cdt.core.formatter.alignment_for_assignment=16
 org.eclipse.cdt.core.formatter.alignment_for_base_clause_in_type_declaration=80
@@ -192,3 +193,5 @@ org.eclipse.cdt.core.formatter.tabulation.char=tab
 org.eclipse.cdt.core.formatter.tabulation.size=4
 org.eclipse.cdt.core.formatter.use_comment_formatter_tag=true
 org.eclipse.cdt.core.formatter.use_tabs_only_for_leading_indentations=false
+=======
+>>>>>>> stm32

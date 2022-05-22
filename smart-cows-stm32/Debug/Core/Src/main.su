@@ -1,0 +1,10 @@
+../Core/Src/main.c:83:6:HAL_UART_RxCpltCallback	16	static
+../Core/Src/main.c:125:13:HAL_Delay	24	static
+../Core/Src/main.c:141:5:__io_putchar	24	static
+../Core/Src/main.c:153:6:sendConfigMessageToLora	16	static
+../Core/Src/main.c:162:6:sendJoinRequestToLora	8	static
+../Core/Src/main.c:170:6:goToDeepSleep	8	static
+../Core/Src/main.c:179:6:connectToLora	8	static
+../Core/Src/main.c:209:5:main	72	static
+../Core/Src/main.c:307:6:SystemClock_Config	96	static
+../Core/Src/main.c:365:6:Error_Handler	4	static,ignoring_inline_asm

@@ -53,9 +53,12 @@ smart-cows-stm32/Module.symvers
 smart-cows-stm32/Mkfile.old
 smart-cows-stm32/dkms.conf
 
+<<<<<<< HEAD
 
 smart-cows-stm3/Debug
 
+=======
+>>>>>>> stm32
 # cscope with Vim
 cscope.*
 
