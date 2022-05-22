@@ -66,6 +66,7 @@ static float changeCordsToDec(float deg_coord, char nsew) {
 
 void GPS_Init(uint8_t *rxData)
 {
+	gpsDataReady = 0;
 	currentPosition = malloc(sizeof(Position));
 	HAL_UART_Receive_IT(GPS_USART, (uint8_t *) &rxData, 1);
 }

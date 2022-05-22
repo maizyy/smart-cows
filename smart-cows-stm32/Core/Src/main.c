@@ -91,6 +91,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		GPS_UART_Callback(&rxData);
 	}
+	HAL_UART_Receive_IT(&huart1, &rxData, 1);
 }
 
 
@@ -119,10 +120,11 @@ int __io_putchar(int ch)
 {
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
-		HAL_UART_Transmit(&huart2, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	}
-
-	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	return 1;
 }
 
@@ -147,7 +149,7 @@ void connect_to_lora()
 		printf("AT+MODE=LWOTAA\r\n");
 		HAL_Delay(500);
 
-		printf("AT+KEY=APPKEY,\"C0C81505F422444905928915E80590E4\"\r\n");
+		printf("AT+KEY=APPKEY,\"F4D4B405FF7AB3C3DF60C78F399B1E3C\"\r\n");
 		HAL_Delay(500);
 
 		printf("AT+ID\r\n");
@@ -194,7 +196,6 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  GPS_Init(&rxData);
   battery_init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
 
@@ -205,7 +206,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //connect_to_lora();
+	  connect_to_lora();
+
+	  if(connectedToNetwork)
+		  GPS_Init(&rxData);
+
 	  if(gpsDataReady)
 	  {
 		  float voltage = battery_getBatteryVolts();
@@ -215,12 +220,15 @@ int main(void)
 		  float temperature = 38;
 		  Position currentPosition;
 		  GPS_getCurrentPosition(&currentPosition);
-		  printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
-		  HAL_UART_Receive_IT(GPS_USART, (uint8_t *) &rxData, 1);
-		  //printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition->longitude, currentPosition->latitude);
+		  //printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
+		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
 
-		  //HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-		  //HAL_PWR_EnterSTANDBYMode();
+		  HAL_Delay(10000);
+
+
+//		  HAL_Delay(500);
+//		  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+//		  HAL_PWR_EnterSTANDBYMode();
 	  }
     /* USER CODE END WHILE */
 
