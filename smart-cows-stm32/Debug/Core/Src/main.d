@@ -34,7 +34,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/rtc.h \
  ../Core/Inc/usart.h ../Core/Inc/gpio.h \
- C:/Users/Adrian/Documents/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/battery_3_7.h
+ F:/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/inc/battery_3_7.h \
+ F:/smart-cows/smart-cows-stm32/my_libraries/GPS/inc/GPS.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -74,4 +75,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/rtc.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
-C:/Users/Adrian/Documents/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/battery_3_7.h:
+F:/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/inc/battery_3_7.h:
+F:/smart-cows/smart-cows-stm32/my_libraries/GPS/inc/GPS.h:

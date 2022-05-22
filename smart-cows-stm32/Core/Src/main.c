@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <battery_3_7.h>
+#include <GPS.h>
 
 /* USER CODE END Includes */
 
@@ -65,12 +66,13 @@ bool connectedToNetwork = false;
 bool networkStatusReceived = false;
 bool configStatusReceived = false;
 bool messageDoneStatusReceived = false;
-
 uint8_t rxData;
 char line_buffer[LINE_MAX_LENGTH + 1];
 uint32_t line_length;
 
 int connectionRequestCounter = 0;
+
+
 
 /* USER CODE END PV */
 
@@ -107,6 +109,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		line_buffer[line_length++] = rxData;
 	}
 
+	if (huart == &huart3)
+	{
+		GPS_UART_Callback(&rxData);
+	}
 	HAL_UART_Receive_IT(&huart1, &rxData, 1);
 }
 
@@ -137,9 +143,10 @@ int __io_putchar(int ch)
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
 		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	}
-
 	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	return 1;
 }
 
@@ -226,6 +233,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_ADC1_Init();
   MX_RTC_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   battery_init(&hadc1, HAL_MAX_DELAY);
@@ -248,24 +256,13 @@ int main(void)
   connectToLora();
 
 
-  /* Pomiary i wysyłanie danych do TTN */
-  float voltage = battery_getBatteryVolts();
-  int batteryLevel = battery_getBatteryChargeLevel();
-
-  float temperature = voltage;
-  float longitude = 13.56438;
-  float latitude = 8.98432;
-  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
-  HAL_Delay(1000); 	// czas na wysłanie danych
 //	  while(messageDoneStatusReceived == 0) {
 //	  }
 //	  messageDoneStatusReceived = 0;
 //	  HAL_Delay(10);
 
   /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
-  char *str2 = "STANDBY MODE is ON\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
-  goToDeepSleep();
+
 
   /* USER CODE END 2 */
 
@@ -274,6 +271,28 @@ int main(void)
   while (1)
   {
 
+	  if(connectedToNetwork)
+		  GPS_Init(&rxData);
+
+	  if(gpsDataReady)
+	  {
+		  /* Pomiary i wysyłanie danych do TTN */
+		  float voltage = battery_getBatteryVolts();
+		  int batteryLevel = battery_getBatteryChargeLevel();
+		  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
+
+		  float temperature = 38;
+		  Position currentPosition;
+		  GPS_getCurrentPosition(&currentPosition);
+		  //printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
+		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
+
+		  HAL_Delay(1500);
+
+		  char *str2 = "STANDBY MODE is ON\n";
+		  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
+		  goToDeepSleep();
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
