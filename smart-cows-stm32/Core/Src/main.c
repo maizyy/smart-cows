@@ -53,8 +53,11 @@
 
 int connectedToNetwork = 0;
 int i;
+uint8_t gpsMsg;
 uint8_t rxData;
 uint8_t joinData[11];
+
+
 
 /* USER CODE END PV */
 
@@ -64,24 +67,30 @@ void SystemClock_Config(void);
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(rxData == '+'){
-		i = 0;
-		joinData[i] = rxData;
-	} else {
-		i++;
-		joinData[i] = rxData;
-	}
-
-	if(i == 10){
-		if(joinData[0] == '+' && joinData[1] == 'J' && joinData[2] == 'O' && joinData[3] == 'I' && joinData[4] == 'N'
-				&& joinData[7] == 'N' && joinData[8] == 'e' && joinData[9] == 't' && joinData[10] == 'w'){
-			connectedToNetwork = 1;
-		}
-		i = 0;
-	}
-
 	HAL_UART_Transmit(&huart2, &rxData, 1, HAL_MAX_DELAY);
-	HAL_UART_Receive_IT(&huart1, &rxData, 1);
+
+	if(huart == &huart1)
+	{
+		if(rxData == '+'){
+			i = 0;
+			joinData[i] = rxData;
+		} else {
+			i++;
+			joinData[i] = rxData;
+		}
+
+		if(i == 10){
+			if(joinData[0] == '+' && joinData[1] == 'J' && joinData[2] == 'O' && joinData[3] == 'I' && joinData[4] == 'N'
+					&& joinData[7] == 'N' && joinData[8] == 'e' && joinData[9] == 't' && joinData[10] == 'w'){
+				connectedToNetwork = 1;
+			}
+			i = 0;
+		}
+	}
+	else if (huart == &huart3)
+	{
+		GPS_UART_Callback(&rxData);
+	}
 }
 
 
@@ -110,10 +119,10 @@ int __io_putchar(int ch)
 {
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
-		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		HAL_UART_Transmit(&huart2, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
 	}
 
-	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
 	return 1;
 }
 
@@ -182,10 +191,13 @@ int main(void)
   MX_USART1_UART_Init();
   MX_ADC1_Init();
   MX_RTC_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  GPS_Init(&rxData);
   battery_init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
+
 
   /* USER CODE END 2 */
 
@@ -194,21 +206,22 @@ int main(void)
   while (1)
   {
 	  //connect_to_lora();
+	  if(gpsDataReady)
+	  {
+		  float voltage = battery_getBatteryVolts();
+		  int batteryLevel = battery_getBatteryChargeLevel();
+		  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
 
-	  float voltage = battery_getBatteryVolts();
-	  int batteryLevel = battery_getBatteryChargeLevel();
+		  float temperature = 38;
+		  Position currentPosition;
+		  GPS_getCurrentPosition(&currentPosition);
+		  printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
+		  HAL_UART_Receive_IT(GPS_USART, (uint8_t *) &rxData, 1);
+		  //printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition->longitude, currentPosition->latitude);
 
-	  float temperature = voltage;
-	  Position *currentPosition = GPS_getCurrentPosition();
-	  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
-	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition->longitude, currentPosition->latitude);
-
-	  const char msg[] = "Going to sleep now...\r\n";
-	  HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
-
-	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-	  HAL_PWR_EnterSTANDBYMode();
-
+		  //HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20479, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+		  //HAL_PWR_EnterSTANDBYMode();
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
