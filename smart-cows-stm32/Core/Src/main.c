@@ -51,8 +51,7 @@
 #define JOIN_DONE "+JOIN: Done"
 #define MSG_DONE "+MSG: Done"
 
-//TODO: Na razie usypianie działa tylko przez max 30 sekund
-#define TIME_SLEEP 30 // [s]
+#define TIME_SLEEP 60 // [s]
 #define MAX_ATTEMPTS_CONNECTION 5
 
 /* USER CODE END PM */
@@ -165,7 +164,7 @@ void goToDeepSleep() {
 	  HAL_Delay(10);
 	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 	  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&hrtc, RTC_FLAG_WUTF);
-	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (TIME_SLEEP * 2048) - 1, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, TIME_SLEEP, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
 	  HAL_PWR_EnterSTANDBYMode();
 }
 
@@ -175,6 +174,7 @@ void connectToLora()
 	sendJoinRequestToLora();
 
 	while(connectedToNetwork == 0 && connectionRequestCounter < MAX_ATTEMPTS_CONNECTION){
+//		sendConfigMessageToLora("AT+ID=DevAddr\r\n");
 //		sendConfigMessageToLora("AT+ID=DevEui\r\n");
 //		sendConfigMessageToLora("AT+ID=AppEui\r\n");
 //		sendConfigMessageToLora("AT+LW=VER\r\n");
