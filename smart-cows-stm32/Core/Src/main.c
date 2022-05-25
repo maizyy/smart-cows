@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "rtc.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -31,6 +32,7 @@
 #include <stdbool.h>
 #include <battery_3_7.h>
 #include <GPS.h>
+#include <ds18b20.h>
 
 /* USER CODE END Includes */
 
@@ -51,6 +53,9 @@
 #define NETWORK_JOINED "+JOIN: Network joined"
 #define JOIN_DONE "+JOIN: Done"
 #define MSG_DONE "+MSG: Done"
+
+// DS18B20 komendy
+#define READ_ROM 0x33
 
 //TODO: Na razie usypianie działa tylko przez max 30 sekund
 #define TIME_SLEEP 30 // [s]
@@ -142,10 +147,10 @@ int __io_putchar(int ch)
 {
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
-		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		//HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
 		HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	}
-	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	//HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
 	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
 	return 1;
 }
@@ -234,26 +239,37 @@ int main(void)
   MX_ADC1_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  battery_init(&hadc1, HAL_MAX_DELAY);
-  HAL_UART_Receive_IT(&huart1, &rxData, 1);
-
-  if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
-  {
-	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-
-	  char *str = "Wakeup from the STANDBY MODE\n";
-	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
-
-	  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+  if (ds18b20_init() != HAL_OK) {
+    Error_Handler();
   }
 
-  /* Wyłączenie trybu LOW-POWER (lora) */
-  HAL_Delay(1500);
-  sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
+  uint8_t ds1[DS18B20_ROM_CODE_SIZE];
 
-  connectToLora();
+  if (ds18b20_read_address(ds1) != HAL_OK) {
+    Error_Handler();
+  }
+
+  battery_init(&hadc1, HAL_MAX_DELAY);
+  //HAL_UART_Receive_IT(&huart1, &rxData, 1);
+
+//  if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
+//  {
+//	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+//
+//	  char *str = "Wakeup from the STANDBY MODE\n";
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+//
+//	  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+//  }
+
+  /* Wyłączenie trybu LOW-POWER (lora) */
+  //HAL_Delay(1500);
+  //sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
+
+  //connectToLora();
 
 
 //	  while(messageDoneStatusReceived == 0) {
@@ -263,36 +279,46 @@ int main(void)
 
   /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
 
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	ds18b20_start_measure(NULL);
 
-	  if(connectedToNetwork)
-		  GPS_Init(&rxData);
+	HAL_Delay(4000);
 
-	  if(gpsDataReady)
-	  {
-		  /* Pomiary i wysyłanie danych do TTN */
-		  float voltage = battery_getBatteryVolts();
-		  int batteryLevel = battery_getBatteryChargeLevel();
-		  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
+	float temp = ds18b20_get_temp(NULL);
+	if (temp >= 80.0f)
+	printf("Sensor error... \r\n");
+	else
+	printf("T1 = %.1f*C\r\n", temp);
 
-		  float temperature = 38;
-		  Position currentPosition;
-		  GPS_getCurrentPosition(&currentPosition);
-		  //printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
-		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
 
-		  HAL_Delay(1500);
-
-		  char *str2 = "STANDBY MODE is ON\n";
-		  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
-		  goToDeepSleep();
-	  }
+//
+//	  if(connectedToNetwork)
+//		  GPS_Init(&rxData);
+//
+//	  if(gpsDataReady)
+//	  {
+//		  /* Pomiary i wysyłanie danych do TTN */
+//		  float voltage = battery_getBatteryVolts();
+//		  int batteryLevel = battery_getBatteryChargeLevel();
+//		  //printf("Voltage: %.3f, Battery level: %d %\r\n", voltage, batteryLevel);
+//
+//		  float temperature = 38;
+//		  Position currentPosition;
+//		  GPS_getCurrentPosition(&currentPosition);
+//		  //printf("\n Lat: %f \t Lon: %f \r\n", currentPosition.latitude, currentPosition.longitude);
+//		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
+//
+//		  HAL_Delay(1500);
+//
+//		  char *str2 = "STANDBY MODE is ON\n";
+//		  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
+//		  goToDeepSleep();
+//	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

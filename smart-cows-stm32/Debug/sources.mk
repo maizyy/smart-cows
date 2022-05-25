@@ -26,4 +26,6 @@ Core/Startup \
 Drivers/STM32L4xx_HAL_Driver/Src \
 my_libraries/Battery_3_7/src \
 my_libraries/GPS/src \
+my_libraries/ds18b20/src \
+my_libraries/wire/src \
 

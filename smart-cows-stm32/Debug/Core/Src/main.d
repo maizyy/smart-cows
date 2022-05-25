@@ -30,12 +30,15 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/rtc.h \
+ ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/rtc.h ../Core/Inc/tim.h \
  ../Core/Inc/usart.h ../Core/Inc/gpio.h \
  F:/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/inc/battery_3_7.h \
- F:/smart-cows/smart-cows-stm32/my_libraries/GPS/inc/GPS.h
+ F:/smart-cows/smart-cows-stm32/my_libraries/GPS/inc/GPS.h \
+ F:/smart-cows/smart-cows-stm32/my_libraries/ds18b20/inc/ds18b20.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -68,12 +71,16 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
 ../Core/Inc/adc.h:
 ../Core/Inc/main.h:
 ../Core/Inc/rtc.h:
+../Core/Inc/tim.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
 F:/smart-cows/smart-cows-stm32/my_libraries/Battery_3_7/inc/battery_3_7.h:
 F:/smart-cows/smart-cows-stm32/my_libraries/GPS/inc/GPS.h:
+F:/smart-cows/smart-cows-stm32/my_libraries/ds18b20/inc/ds18b20.h:

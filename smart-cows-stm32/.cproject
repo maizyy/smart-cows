@@ -51,6 +51,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/smart-cows-stm32/my_libraries/GPS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/smart-cows-stm32/my_libraries/Battery_3_7/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/smart-cows-stm32/my_libraries/wire/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/smart-cows-stm32/my_libraries/ds18b20/inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.2143343786" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -79,9 +81,11 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="my_libraries/ds18b20/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="my_libraries/Battery_3_7/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="my_libraries/GPS/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="my_libraries/wire/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
