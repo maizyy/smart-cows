@@ -159,10 +159,15 @@ void sendJoinRequestToLora()
 	networkStatusReceived = false;
 }
 
+void sendToPC(char* str){
+	HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+}
+
 void goToDeepSleep() {
 	  sendConfigMessageToLora("AT+LOWPOWER=AUTOON\r\n");
 	  HAL_Delay(10);
 	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, TIME_SLEEP, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+	  sendToPC("STANDBY MODE is ON\n");
 	  HAL_PWR_EnterSTANDBYMode();
 }
 
@@ -226,33 +231,20 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
-  char *str = "Wakeup from the STANDBY MODE\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+  sendToPC("Wakeup from the STANDBY MODE\n");
 
-  battery_init(&hadc1, HAL_MAX_DELAY);
+  /* Wyłączenie trybu LOW-POWER (lora) i połączenie się z siecią */
+  if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR2) == 0) {
+	  HAL_Delay(1200);	// Przy pierwszym włączeniu należy poczekać, aż uruchomi się moduł LoRa
+	  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, 1);
+  }
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
-
-  /* Wyłączenie trybu LOW-POWER (lora) */
-  HAL_Delay(1500);
   sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
-
   connectToLora();
 
 
-  /* Pomiary i wysyłanie danych do TTN */
-  float voltage = battery_getBatteryVolts();
-  int batteryLevel = battery_getBatteryChargeLevel();
-
-  float temperature = voltage;
-  float longitude = 13.56438;
-  float latitude = 8.98432;
-  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
-  HAL_Delay(1000); 	// czas na wysłanie danych
-
-  /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
-  char *str2 = "STANDBY MODE is ON\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)str2, strlen (str2), HAL_MAX_DELAY);
-  goToDeepSleep();
+  /* Właczenie modułu GPS */
+  HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -260,6 +252,28 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //TODO: GPS
+	  //TODO: Termometr
+
+	  /** Wyłączenie modułu GPS */
+	  HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_RESET);
+
+
+	  /* Pomiary i wysyłanie danych do TTN */
+	  battery_init(&hadc1, HAL_MAX_DELAY);
+	  float voltage = battery_getBatteryVolts();
+	  int batteryLevel = battery_getBatteryChargeLevel();
+
+	  float temperature = voltage;
+	  float longitude = 13.56438;
+	  float latitude = 8.98432;
+
+	  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
+	  HAL_Delay(1000); 	// czas na wysłanie danych
+
+
+	  /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
+	  goToDeepSleep();
 
     /* USER CODE END WHILE */
 
