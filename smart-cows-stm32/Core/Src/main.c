@@ -162,8 +162,6 @@ void sendJoinRequestToLora()
 void goToDeepSleep() {
 	  sendConfigMessageToLora("AT+LOWPOWER=AUTOON\r\n");
 	  HAL_Delay(10);
-	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-	  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&hrtc, RTC_FLAG_WUTF);
 	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, TIME_SLEEP, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
 	  HAL_PWR_EnterSTANDBYMode();
 }
@@ -228,18 +226,11 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
+  char *str = "Wakeup from the STANDBY MODE\n";
+  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+
   battery_init(&hadc1, HAL_MAX_DELAY);
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
-
-  if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
-  {
-	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-
-	  char *str = "Wakeup from the STANDBY MODE\n";
-	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
-
-	  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-  }
 
   /* Wyłączenie trybu LOW-POWER (lora) */
   HAL_Delay(1500);
@@ -257,10 +248,6 @@ int main(void)
   float latitude = 8.98432;
   printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, longitude, latitude);
   HAL_Delay(1000); 	// czas na wysłanie danych
-//	  while(messageDoneStatusReceived == 0) {
-//	  }
-//	  messageDoneStatusReceived = 0;
-//	  HAL_Delay(10);
 
   /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
   char *str2 = "STANDBY MODE is ON\n";
