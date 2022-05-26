@@ -57,7 +57,7 @@
 // DS18B20 komendy
 #define READ_ROM 0x33
 
-#define TIME_SLEEP 15 // [s]
+#define TIME_SLEEP 60 // [s]
 #define MAX_ATTEMPTS_CONNECTION 5
 
 /* USER CODE END PM */
@@ -177,6 +177,7 @@ void sendToPC(char* str){
 	HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
 }
 
+
 void goToDeepSleep() {
 	  sendConfigMessageToLora("AT+LOWPOWER=AUTOON\r\n");
 	  HAL_Delay(10);
@@ -191,7 +192,7 @@ void connectToLora()
 	sendJoinRequestToLora();
 
 	while(connectedToNetwork == 0 && connectionRequestCounter < MAX_ATTEMPTS_CONNECTION){
-//		sendConfigMessageToLora("AT+ID=DevAddr\r\n");
+		sendConfigMessageToLora("AT+ID=DevAddr\r\n");
 //		sendConfigMessageToLora("AT+ID=DevEui\r\n");
 //		sendConfigMessageToLora("AT+ID=AppEui\r\n");
 //		sendConfigMessageToLora("AT+LW=VER\r\n");
@@ -199,7 +200,7 @@ void connectToLora()
 		sendConfigMessageToLora("AT+DR=EU868\r\n");
 		sendConfigMessageToLora("AT+CH=NUM,0-2\r\n");
 		sendConfigMessageToLora("AT+MODE=LWOTAA\r\n");
-		sendConfigMessageToLora("AT+KEY=APPKEY,\"D5A115FED9A381224497F0D3C9688F88\"\r\n");
+		sendConfigMessageToLora("AT+KEY=APPKEY,\"F4D4B405FF7AB3C3DF60C78F399B1E3C\"\r\n");
 		sendJoinRequestToLora();
 
 		connectionRequestCounter++;
@@ -248,7 +249,7 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
-  sendToPC("Wakeup from the STANDBY MODE\n");
+  sendToPC("\nWakeup from the STANDBY MODE\r\n");
 
   /* Wyłączenie trybu LOW-POWER (lora) i połączenie się z siecią */
   if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR2) == 0) {
@@ -260,6 +261,7 @@ int main(void)
   connectToLora();
 
   sendToPC("\nStart GPS\n");
+
   /* Właczenie modułu GPS */
   HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
 
@@ -272,6 +274,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
 	  /** Czekanie na lokalizacje */
 	  if(gpsDataReady)
 	  {
@@ -282,6 +285,7 @@ int main(void)
 		  HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_RESET);
 		  sendToPC("\nKoniec GPS\n");
 
+		  /* Pomiary i wysyłanie danych do TTN */
 		  if (ds18b20_init() != HAL_OK)
 		  {
 			   Error_Handler();
@@ -291,20 +295,18 @@ int main(void)
 		  {
 			 // Error_Handler();
 		  }
-
-		  /* Pomiary i wysyłanie danych do TTN */
-//		  ds18b20_start_measure(NULL);
-//		  float temperature = ds18b20_get_temp(NULL) - 1.5f;
-//		  if (temp >= 80.0f) sendToPC("Sensor error... \r\n");
-//		  else sendToPC("T1 = %.1f*C\r\n", temp);
+		  ds18b20_start_measure(NULL);
+		  float temperature = ds18b20_get_temp(NULL) - 1.5f;
+		  char temp[50];
+		  sprintf(temp, "T1 = %.1f*C\r\n", temperature);
+		  sendToPC(temp);
 
 		  battery_init(&hadc1, HAL_MAX_DELAY);
 	//	  float voltage = battery_getBatteryVolts();
 		  int batteryLevel = battery_getBatteryChargeLevel();
-		  float temperature = 0.1f;
 
 		  printf("AT+MSG=%d_%f_%f_%f\r\n", batteryLevel, temperature, currentPosition.longitude, currentPosition.latitude);
-		  HAL_Delay(1000); 	// czas na wysłanie danych
+		  HAL_Delay(1500); 	// czas na wysłanie danych
 
 
 		  /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
@@ -346,7 +348,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_7;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {

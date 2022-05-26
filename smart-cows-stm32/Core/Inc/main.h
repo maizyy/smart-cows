@@ -59,6 +59,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define GPS_POWER_Pin GPIO_PIN_0
 #define GPS_POWER_GPIO_Port GPIOA
+#define UART_TEMP_RX_Pin GPIO_PIN_1
+#define UART_TEMP_RX_GPIO_Port GPIOA
+#define UART_TEMP_TX_Pin GPIO_PIN_10
+#define UART_TEMP_TX_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

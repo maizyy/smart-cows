@@ -38,34 +38,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := smart-cows-stm32-my
+BUILD_ARTIFACT_NAME := smart-cows-stm32
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-smart-cows-stm32-my.elf \
+smart-cows-stm32.elf \
 
 MAP_FILES += \
-smart-cows-stm32-my.map \
+smart-cows-stm32.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-smart-cows-stm32-my.list \
+smart-cows-stm32.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: smart-cows-stm32-my.elf secondary-outputs
+main-build: smart-cows-stm32.elf secondary-outputs
 
 # Tool invocations
-smart-cows-stm32-my.elf smart-cows-stm32-my.map: $(OBJS) $(USER_OBJS) C:\Users\Adrian\Documents\GitHub\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "smart-cows-stm32-my.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Adrian\Documents\GitHub\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="smart-cows-stm32-my.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+smart-cows-stm32.elf smart-cows-stm32.map: $(OBJS) $(USER_OBJS) F:\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "smart-cows-stm32.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"F:\smart-cows\smart-cows-stm32\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="smart-cows-stm32.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -74,14 +74,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-smart-cows-stm32-my.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "smart-cows-stm32-my.list"
+smart-cows-stm32.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "smart-cows-stm32.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout smart-cows-stm32-my.elf smart-cows-stm32-my.list smart-cows-stm32-my.map
+	-$(RM) default.size.stdout smart-cows-stm32.elf smart-cows-stm32.list smart-cows-stm32.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

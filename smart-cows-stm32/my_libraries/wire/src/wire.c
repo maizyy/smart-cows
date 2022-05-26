@@ -8,10 +8,31 @@
 #include <wire.h>
 #include "gpio.h"
 #include "tim.h"
+#include "usart.h"
 
 /*
  * private functions
  */
+
+
+static void set_baudrate(uint32_t baudrate)
+{
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = baudrate;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_RXOVERRUNDISABLE_INIT;
+  huart4.AdvancedInit.OverrunDisable = UART_ADVFEATURE_OVERRUN_DISABLE;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+	Error_Handler();
+  }
+}
 
 static void delay_us(uint32_t us)
 {
@@ -21,39 +42,25 @@ static void delay_us(uint32_t us)
   }
 }
 
-static int read_bit(void)
-{
-  int rc;
-  //__set_BASEPRI(1 << 4);
-  __disable_irq();
-  HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_RESET);
-  delay_us(6);
-  HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_SET);
-  delay_us(9);
-  rc = HAL_GPIO_ReadPin(DS_GPIO_Port, DS_Pin);
-  delay_us(55);
-  //__set_BASEPRI(0);
-  __enable_irq();
-  return rc;
-}
-
 static void write_bit(int value)
 {
-   __disable_irq();
-	//__set_BASEPRI(1 << 4);
   if (value) {
-    HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_RESET);
-    delay_us(6);
-    HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_SET);
-    delay_us(64);
+      uint8_t data_out = 0xff;
+    HAL_UART_Transmit(&huart4, &data_out, 1, HAL_MAX_DELAY);
   } else {
-    HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_RESET);
-    delay_us(60);
-    HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_SET);
-    delay_us(10);
+      uint8_t data_out = 0x0;
+    HAL_UART_Transmit(&huart4, &data_out, 1, HAL_MAX_DELAY);
   }
-  //__set_BASEPRI(0);
-  __enable_irq();
+}
+
+static int read_bit(void)
+{
+  uint8_t data_out = 0xFF;
+  uint8_t data_in = 0;
+  HAL_UART_Transmit(&huart4, &data_out, 1, HAL_MAX_DELAY);
+  HAL_UART_Receive(&huart4, &data_in, 1, HAL_MAX_DELAY);
+
+  return data_in & 0x01;
 }
 
 static uint8_t byte_crc(uint8_t crc, uint8_t byte)
@@ -78,22 +85,17 @@ HAL_StatusTypeDef wire_init(void)
   return HAL_TIM_Base_Start(&htim1);
 }
 
-
 HAL_StatusTypeDef wire_reset(void)
 {
-  int rc;
-  //__set_BASEPRI(1 << 4);
-  __disable_irq();
-  HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_RESET);
-  delay_us(480);
-  HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_SET);
-  delay_us(80);
-  rc = HAL_GPIO_ReadPin(DS_GPIO_Port, DS_Pin);
-  delay_us(400);
-  //__set_BASEPRI(0);
-  __enable_irq();
+  uint8_t data_out = 0xF0;
+  uint8_t data_in = 0;
 
-  if (rc == 0)
+  set_baudrate(9600);
+  HAL_UART_Transmit(&huart4, &data_out, 1, HAL_MAX_DELAY);
+  HAL_UART_Receive(&huart4, &data_in, 1, HAL_MAX_DELAY);
+  set_baudrate(115200);
+
+  if (data_in != 0xF0)
     return HAL_OK;
   else
     return HAL_ERROR;
