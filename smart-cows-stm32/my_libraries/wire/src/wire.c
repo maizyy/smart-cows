@@ -7,7 +7,7 @@
 
 #include <wire.h>
 #include "gpio.h"
-//#include "tim.h"
+#include "tim.h"
 
 /*
  * private functions
@@ -15,9 +15,10 @@
 
 static void delay_us(uint32_t us)
 {
-//  __HAL_TIM_SET_COUNTER(&htim6, 0);
+  __HAL_TIM_SET_COUNTER(&htim1, 0);
 
-//  while (__HAL_TIM_GET_COUNTER(&htim6) < us) {}
+  while (__HAL_TIM_GET_COUNTER(&htim1) < us) {
+  }
 }
 
 static int read_bit(void)
@@ -30,7 +31,7 @@ static int read_bit(void)
   delay_us(9);
   rc = HAL_GPIO_ReadPin(DS_GPIO_Port, DS_Pin);
   delay_us(55);
-  __set_BASEPRI(1 << 4);
+  __set_BASEPRI(0);
   return rc;
 }
 
@@ -70,20 +71,21 @@ static uint8_t byte_crc(uint8_t crc, uint8_t byte)
 
 HAL_StatusTypeDef wire_init(void)
 {
-//  return HAL_TIM_Base_Start(&htim6);
+  return HAL_TIM_Base_Start(&htim1);
 }
 
 
 HAL_StatusTypeDef wire_reset(void)
 {
   int rc;
-
+  __set_BASEPRI(1 << 4);
   HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_RESET);
   delay_us(480);
   HAL_GPIO_WritePin(DS_GPIO_Port, DS_Pin, GPIO_PIN_SET);
   delay_us(70);
   rc = HAL_GPIO_ReadPin(DS_GPIO_Port, DS_Pin);
   delay_us(410);
+  __set_BASEPRI(0);
 
   if (rc == 0)
     return HAL_OK;

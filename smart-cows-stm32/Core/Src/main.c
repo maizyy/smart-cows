@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "rtc.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -149,9 +150,9 @@ int __io_putchar(int ch)
 {
 	if (ch == '\n'){
 		uint8_t ch2 = '\r';
-		HAL_UART_Transmit(&huart1, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
+		HAL_UART_Transmit(&huart2, &ch2, 1, HAL_MAX_DELAY);	// 1 - lora / 2 - pc
 	}
-	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
+	HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY); // 1 - lora / 2 - pc
 	return 1;
 }
 
@@ -237,35 +238,37 @@ int main(void)
   MX_ADC1_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  // Czujnik temp
-//  if (ds18b20_init() != HAL_OK) {
-//    Error_Handler();
-//  }
-//
-//  uint8_t ds1[DS18B20_ROM_CODE_SIZE];
-//
-//  if (ds18b20_read_address(ds1) != HAL_OK) {
-//    Error_Handler();
-//  }
+  /* Czujnik temperatury */
+    if (ds18b20_init() != HAL_OK)
+    {
+      Error_Handler();
+    }
 
-  char *str = "Wakeup from the STANDBY MODE\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
-  battery_init(&hadc1, HAL_MAX_DELAY);
-  HAL_UART_Receive_IT(&huart1, &rxData, 1);
+    uint8_t ds1[DS18B20_ROM_CODE_SIZE];
+
+    if (ds18b20_read_address(ds1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+//  char *str = "Wakeup from the STANDBY MODE\r\n";
+//  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+//  battery_init(&hadc1, HAL_MAX_DELAY);
+//  HAL_UART_Receive_IT(&huart1, &rxData, 1);
+
 
   /* Wyłączenie trybu LOW-POWER (lora) */
-  HAL_Delay(1500);
-  sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
+//  HAL_Delay(1500);
+//  sendConfigMessageToLora("ÿÿÿÿAT+LOWPOWER=AUTOOFF\r\n");
+//
+//  connectToLora();
+//
+//  GPS_Init(&rxData);
+//  GPS_Init(&rxData);
 
-  connectToLora();
-
-  GPS_Init(&rxData);
-  GPS_Init(&rxData);
-
-
-  /* Uśpienie urządzenia wraz z podłączonymi czujnikami */
 
   /* USER CODE END 2 */
 
@@ -273,15 +276,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	ds18b20_start_measure(NULL);
-//
-//	HAL_Delay(4000);
-//
-//	float temp = ds18b20_get_temp(NULL);
-//	if (temp >= 80.0f)
-//	printf("Sensor error... \r\n");
-//	else
-//	printf("T1 = %.1f*C\r\n", temp);
+	ds18b20_start_measure(NULL);
+
+	HAL_Delay(4000);
+
+	float temp = ds18b20_get_temp(NULL);
+	if (temp >= 80.0f)
+	printf("Sensor error... \r\n");
+	else
+	printf("T1 = %.1f*C\r\n", temp);
 
 
 	  if(gpsDataReady)
@@ -338,7 +341,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_7;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
