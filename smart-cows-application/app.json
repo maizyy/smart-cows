@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "smart-cows",
+    "slug": "smart-cows",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "config": {
+          "googleMapsApiKey": "AIzaSyAj1Dso7ymhGBcA0JRXNZ-Ag3AI5vQyk0c"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAj1Dso7ymhGBcA0JRXNZ-Ag3AI5vQyk0c"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
+  }
+}
